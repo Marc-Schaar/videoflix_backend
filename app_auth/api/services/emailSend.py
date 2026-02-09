@@ -16,8 +16,6 @@ def sendActivationMail(user, token,uidb64):
 
     html_content = render_to_string("emails/activation.html", context)
 
-    # 2. Text Inhalt (entweder eigenes Template oder einfach HTML-Tags entfernen)
-    # Tipp: strip_tags ist ein schneller Weg, falls du kein extra .txt Template willst
     text_content = strip_tags(html_content)
 
     msg = EmailMultiAlternatives(
