@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from app_auth.models import User
 
 from .serializers import RegistrationSerializer
-from .services.emailSend import sendActivationMail
+from .services.send_mail import sendActivationMail
 
 class RegisterView(APIView):
     permission_class= AllowAny
@@ -41,7 +41,6 @@ class RegisterView(APIView):
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-            # Hier die E-Mail versenden:
             sendActivationMail(user, token, uidb64)
 
             data = {

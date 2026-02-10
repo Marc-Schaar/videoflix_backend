@@ -8,7 +8,7 @@ from email.mime.image import MIMEImage
 
 
 
-def sendActivationMail(user, token,uidb64):
+def send_activation_mail(user, token,uidb64):
     if settings.DEBUG:
         activation_url = f"https://localhost:5500/{uidb64}/{token}/"
     else:
