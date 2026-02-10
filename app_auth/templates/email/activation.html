@@ -1,1 +1,23 @@
-<h1>Test html</h1>
+<html>
+    <body style="font-family: Arial, Helvetica, sans-serif;">
+         <img src="cid:logo_id" alt="Videoflix">
+
+        <p>Dear <span style="color: #1223D9;">{{ user.username }}</span>,</p>
+        <p> Thank you for your registering with <span style="color: #1223D9;">Videoflix</span>. To complete your registration and veryfy your email adress, please click the link below:</p>
+        
+        <a href="{{ activation_url }}" style="background-color: #1223D9; color: white; margin-top:12px; margin-bottom:12px; padding: 12px 25px; text-decoration: none; border-radius: 40px; font-weight: bold; display: inline-block;">
+        Activate account
+        </a>
+
+        <p>Sollte der Button nicht funktionieren, kopiere diesen Link in deinen Browser:</p>
+        <p style="word-break: break-all; color:#1223D9;">{{ activation_url }}</p>
+
+
+        <p>If you did not create an account with us, please disregard this email</p>
+        <p>Best regards,</p>
+        <p>Your Videoflix Team.</p>
+    </body>
+</html>
+
+
+     

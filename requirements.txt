@@ -12,6 +12,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 pytz==2025.2
 redis==7.1.0
+rest-framework-simplejwt==0.0.2
 rq==2.6.1
 six==1.17.0
 sqlparse==0.5.5
