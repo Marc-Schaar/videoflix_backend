@@ -173,3 +173,9 @@ else:
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
     DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
+
+
+if DEBUG:
+        FRONTEND_DOMAIN = f"https://localhost:5500/"
+else:
+        FRONTEND_DOMAIN = f"https://localhost:5500/"
