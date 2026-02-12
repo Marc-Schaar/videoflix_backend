@@ -1,14 +1,16 @@
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
+from django.conf import settings
 
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-
+from rest_framework_simplejwt.views import TokenObtainPairView 
 from rest_framework.response import Response
 
 from app_auth.models import User
+
 
 from .serializers import RegistrationSerializer
 from .services.send_mail import send_activation_mail
@@ -65,3 +67,35 @@ class ActivateView(APIView):
                 {"error": "Invalid or expired token."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+
+class LoginView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200:
+                access_token = response.data.get("access")
+                refresh_token = response.data.get("refresh")
+
+                del response.data["access"]
+                del response.data["refresh"]
+
+                response.set_cookie(
+                    key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+                    value=access_token,
+                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+                )
+
+                response.set_cookie(
+                    key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+                    value=refresh_token,
+                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+                )
+
+                response.data["message"] = "Login erfolgreich"
+
+        return response
