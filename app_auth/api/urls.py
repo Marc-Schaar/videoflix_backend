@@ -1,8 +1,8 @@
 from django.urls import path
 
-from .views import RegisterView, ActivateView
+from .views import RegistrationView, ActivateView
 
 urlpatterns = [
-    path("register/", RegisterView.as_view(), name="register"),
+    path("register/", RegistrationView.as_view(), name="register"),
     path("activate/<str:uidb64>/<str:token>/", ActivateView.as_view(), name="activate"),
 ]

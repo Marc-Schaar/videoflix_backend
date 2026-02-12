@@ -3,12 +3,11 @@ from app_auth.models import User
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-
     confirmed_password = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
-        fields = ["username", "email", "password", "confirmed_password"]
+        fields = ["id", "email", "password", "confirmed_password"]
         extra_kwargs = {
             "password": {"write_only": True},
             "email": {"required": True, "allow_blank": False},
@@ -29,7 +28,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         pw = self.validated_data["password"]
 
         account = User(
-            email=self.validated_data["email"], username=self.validated_data["username"]
+            email=self.validated_data["email"]
         )
         account.set_password(pw)
         account.save()

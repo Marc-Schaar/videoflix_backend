@@ -14,19 +14,14 @@ from .serializers import RegistrationSerializer
 from .services.send_mail import send_activation_mail
 
 
-class RegisterView(APIView):
-    permission_class = AllowAny
+class RegistrationView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
-        username = request.data.get("username")
         email = request.data.get("email")
 
-        if User.objects.filter(username=username).exists():
-            return Response(
-                {"username": "A user with this username already exists."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+
 
         if User.objects.filter(email=email).exists():
             return Response(
@@ -44,7 +39,14 @@ class RegisterView(APIView):
 
             send_activation_mail(user, token, uidb64)
 
-            data = {"user": user, "token": uidb64}
+            data = {
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                },
+                "token": uidb64
+            }
+            
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
