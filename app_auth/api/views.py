@@ -19,15 +19,6 @@ class RegistrationView(APIView):
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
-        email = request.data.get("email")
-
-
-
-        if User.objects.filter(email=email).exists():
-            return Response(
-                {"email": "A user with this email already exists."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         if serializer.is_valid():
             user = serializer.save()
