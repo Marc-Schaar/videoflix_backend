@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from app_auth.models import User
 
+
 class RegistrationSerializer(serializers.ModelSerializer):
 
     confirmed_password = serializers.CharField(write_only=True)

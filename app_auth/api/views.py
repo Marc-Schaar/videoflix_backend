@@ -11,10 +11,11 @@ from rest_framework.response import Response
 from app_auth.models import User
 
 from .serializers import RegistrationSerializer
-from .services.send_mail import sendActivationMail
+from .services.send_mail import send_activation_mail
+
 
 class RegisterView(APIView):
-    permission_class= AllowAny
+    permission_class = AllowAny
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -41,13 +42,9 @@ class RegisterView(APIView):
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-            sendActivationMail(user, token, uidb64)
+            send_activation_mail(user, token, uidb64)
 
-            data = {
-               "user" :user,
-               "token": uidb64
-
-            }
+            data = {"user": user, "token": uidb64}
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -66,6 +63,12 @@ class ActivateView(APIView):
         if user is not None and default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return Response({"message": "Account successfully activated."}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "Account successfully activated."},
+                status=status.HTTP_200_OK,
+            )
         else:
-            return Response({"error": "Invalid or expired token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid or expired token."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )

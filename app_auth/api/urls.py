@@ -4,5 +4,5 @@ from .views import RegisterView, ActivateView
 
 urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
-    path('activate/<str:uidb64>/<str:token>/', ActivateView.as_view(), name='activate'),
+    path("activate/<str:uidb64>/<str:token>/", ActivateView.as_view(), name="activate"),
 ]

@@ -1,0 +1,15 @@
+venv/
+.venv/
+env/
+
+*/migrations/*.py
+
+static/
+media/
+staticfiles/
+
+.pytest_cache/
+.coverage
+__pycache__/
+dist/
+build/

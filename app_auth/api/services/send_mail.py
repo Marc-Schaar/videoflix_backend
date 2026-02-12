@@ -6,9 +6,7 @@ from django.contrib.staticfiles import finders
 from email.mime.image import MIMEImage
 
 
-
-
-def send_activation_mail(user, token,uidb64):
+def send_activation_mail(user, token, uidb64):
     if settings.DEBUG:
         activation_url = f"https://localhost:5500/{uidb64}/{token}/"
     else:
@@ -19,9 +17,9 @@ def send_activation_mail(user, token,uidb64):
         "activation_url": activation_url,
     }
 
-    logo_path = finders.find('images/logo.svg')
+    logo_path = finders.find("images/logo.svg")
 
-    html_content = render_to_string("emails/activation.html", context)
+    html_content = render_to_string("email/activation.html", context)
 
     text_content = strip_tags(html_content)
 
@@ -34,11 +32,11 @@ def send_activation_mail(user, token,uidb64):
 
     msg.attach_alternative(html_content, "text/html")
 
-    with open(logo_path, 'rb') as f:
-        logo_data = f.read()
-
-    logo = MIMEImage(logo_data)
-    logo.add_header('Content-ID', '<logo_id>')  
-    msg.attach(logo)
+    if logo_path:
+        with open(logo_path, "rb") as f:
+            logo_data = f.read()
+        logo = MIMEImage(logo_data)
+        logo.add_header("Content-ID", "<logo_id>")
+        msg.attach(logo)
 
     msg.send()
