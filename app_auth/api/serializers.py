@@ -61,7 +61,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             raise serializers.ValidationError("Inavlid Email or Password")
 
         if not user.is_active:
-            raise serializers.ValidationError({"email": "User is not active"})
+            raise serializers.ValidationError({"email": "Authentication failed. Please verify your account."})
 
         data = super().validate({"username": user.username, "password": password})
         return data
