@@ -6,10 +6,10 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-def test_user_login_success(api_client):
+def test_user_login_success(api_client, user):
     url = reverse('login')
     data = {
-        "email": "user@example.com",
+        "email": user.email,
         "password": "securepassword!",
     }
 
@@ -19,5 +19,5 @@ def test_user_login_success(api_client):
     assert response.status_code == 200, f"Login fehlgeschlagen: {response.data}"
 
     assert "user" in response_data
-    assert response_data["user"]["email"] == "user@example.com"
+    assert response_data["user"]["email"] == user.email
     assert "id" in response_data["user"]

@@ -27,6 +27,7 @@ def test_user_registration_success(api_client):
     assert "id" in response_data["user"]
 
 
+
     assert "token" in response_data
     assert response_data["token"] is not None
 

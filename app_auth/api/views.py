@@ -11,9 +11,10 @@ from rest_framework.response import Response
 
 from app_auth.models import User
 
-
-from .serializers import RegistrationSerializer
+from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
 from .services.send_mail import send_activation_mail
+from .utils import create_username
+
 
 
 class RegistrationView(APIView):
@@ -22,8 +23,10 @@ class RegistrationView(APIView):
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
 
+
         if serializer.is_valid():
             user = serializer.save()
+            user.username = create_username(user.email)
             user.is_active = False
             user.save()
 
@@ -70,32 +73,42 @@ class ActivateView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
 
-        if response.status_code == 200:
-                access_token = response.data.get("access")
-                refresh_token = response.data.get("refresh")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        access_token = serializer.validated_data["access"]
+        refresh_token = serializer.validated_data["refresh"]
 
-                del response.data["access"]
-                del response.data["refresh"]
+        response = Response({
+            "message": "Login successful",
+            "user": {
+                "email": serializer.user.email,
+                "id": serializer.user.id
+            }
+        }, status=status.HTTP_200_OK)
 
-                response.set_cookie(
-                    key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-                    value=access_token,
-                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                )
+        
 
-                response.set_cookie(
-                    key=settings.SIMPLE_JWT['AUTH_COOKIE'],
-                    value=refresh_token,
-                    httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-                    secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-                    samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
-                )
+        cookie_settings = {
+            "httponly": settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+            "secure": settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+            "samesite": settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        }
 
-                response.data["message"] = "Login erfolgreich"
+        response.set_cookie(
+            key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+            value=access_token,
+            **cookie_settings
+        )
+
+        response.set_cookie(
+            key="refresh_token", 
+            value=refresh_token,
+            **cookie_settings
+        )
 
         return response
