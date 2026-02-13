@@ -1,3 +1,4 @@
+from django.contrib.auth import logout
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -6,8 +7,10 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
+
 
 from app_auth.models import User
 
@@ -106,4 +109,28 @@ class LoginView(TokenObtainPairView):
 
         response.set_cookie(key="refresh_token", value=refresh_token, **cookie_settings)
 
+        return response
+
+
+class LogOutView(APIView):
+    def post(self, request):
+        response = Response(
+            {
+                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
+            },
+            status=200,
+        )
+
+        access_cookie_name = settings.SIMPLE_JWT.get("AUTH_COOKIE", "access_token")
+
+        response.delete_cookie(access_cookie_name)
+        response.delete_cookie("refresh_token")
+
+        try:
+            refresh_token = request.COOKIES.get("refresh_token")
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+        except Exception:
+            pass
         return response

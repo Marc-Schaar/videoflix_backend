@@ -4,8 +4,6 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from rest_framework_simplejwt.tokens import AccessToken
 
-
-
 User = get_user_model()
 
 
@@ -27,17 +25,17 @@ def test_user_login_success(api_client, user):
     assert response_data["user"]["email"] == user.email
     assert "id" in response_data["user"]
 
-    access_cookie_name = settings.SIMPLE_JWT.get('AUTH_COOKIE', 'access_token')
+    access_cookie_name = settings.SIMPLE_JWT.get("AUTH_COOKIE", "access_token")
 
     assert access_cookie_name in response.cookies, "Access Token Cookie fehlt"
     assert "refresh_token" in response.cookies, "Refresh Token Cookie fehlt"
 
-    assert response.cookies[access_cookie_name]['httponly'] is True
+    assert response.cookies[access_cookie_name]["httponly"] is True
 
     token_value = response.cookies[access_cookie_name].value
     decoded_token = AccessToken(token_value)
 
-    user_id_claim = settings.SIMPLE_JWT.get('USER_ID_CLAIM', 'user_id')
+    user_id_claim = settings.SIMPLE_JWT.get("USER_ID_CLAIM", "user_id")
     assert decoded_token[user_id_claim] == user.email
 
 
@@ -52,7 +50,7 @@ def test_login_wrong_password(api_client, user):
 
     assert response.status_code == 400
     assert "Inavlid Email or Password" in str(response.data)
-    assert settings.SIMPLE_JWT['AUTH_COOKIE'] not in response.cookies
+    assert settings.SIMPLE_JWT["AUTH_COOKIE"] not in response.cookies
 
 
 @pytest.mark.django_db

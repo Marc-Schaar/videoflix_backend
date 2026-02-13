@@ -1,7 +1,10 @@
-from rest_framework.test import APIClient
 import pytest
 
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+
+from rest_framework.test import APIClient
+
 from utils import create_username
 
 
@@ -19,3 +22,13 @@ def user(db):
 @pytest.fixture
 def api_client():
     return APIClient()
+
+
+@pytest.fixture
+def authenticated_client(api_client, user):
+    url = reverse("login")
+    api_client.post(
+        url, {"email": user.email, "password": "securepassword!"}, format="json"
+    )
+
+    return api_client
