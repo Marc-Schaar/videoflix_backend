@@ -29,9 +29,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     def save(self):
         pw = self.validated_data["password"]
 
-        account = User(
-            email=self.validated_data["email"]
-        )
+        account = User(email=self.validated_data["email"])
         account.set_password(pw)
         account.save()
         return account
@@ -39,9 +37,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 User = get_user_model()
 
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     email = serializers.EmailField()
-    password = serializers.CharField(write_only = True)
+    password = serializers.CharField(write_only=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -49,21 +48,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         if "username" in self.fields:
             self.fields.pop("username")
 
-
     def validate(self, attrs):
         email = attrs.get("email")
         password = attrs.get("password")
 
         try:
-            user = User.objects.get(email = email)
+            user = User.objects.get(email=email)
         except User.DoesNotExist:
             raise serializers.ValidationError("Inavlid Email or Password")
-        
+
         if not user.check_password(password):
             raise serializers.ValidationError("Inavlid Email or Password")
 
-        if not user.is_active :
+        if not user.is_active:
             raise serializers.ValidationError({"email": "User is not active"})
-        
+
         data = super().validate({"username": user.username, "password": password})
         return data

@@ -12,7 +12,7 @@ def user(db):
     password = "securepassword!"
 
     return get_user_model().objects.create_user(
-        username=username,  email=email, password=password, is_active=True
+        username=username, email=email, password=password, is_active=True
     )
 
 

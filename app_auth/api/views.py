@@ -6,7 +6,7 @@ from django.conf import settings
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.views import TokenObtainPairView 
+from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.response import Response
 
 from app_auth.models import User
@@ -16,18 +16,16 @@ from .services.send_mail import send_activation_mail
 from .utils import create_username
 
 
-
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
 
-
         if serializer.is_valid():
             user = serializer.save()
             user.username = create_username(user.email)
-            if settings.DEBUG: 
+            if settings.DEBUG:
                 user.is_active = True
             else:
                 user.is_active = False
@@ -43,9 +41,9 @@ class RegistrationView(APIView):
                     "id": user.id,
                     "email": user.email,
                 },
-                "token": uidb64
+                "token": uidb64,
             }
-            
+
             return Response(data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -82,36 +80,30 @@ class LoginView(TokenObtainPairView):
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         access_token = serializer.validated_data["access"]
         refresh_token = serializer.validated_data["refresh"]
 
-        response = Response({
-            "message": "Login successful",
-            "user": {
-                "email": serializer.user.email,
-                "id": serializer.user.id
-            }
-        }, status=status.HTTP_200_OK)
-
-        
+        response = Response(
+            {
+                "message": "Login successful",
+                "user": {"email": serializer.user.email, "id": serializer.user.id},
+            },
+            status=status.HTTP_200_OK,
+        )
 
         cookie_settings = {
-            "httponly": settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-            "secure": settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            "samesite": settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+            "httponly": settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
+            "secure": settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
+            "samesite": settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
         }
 
         response.set_cookie(
-            key=settings.SIMPLE_JWT['AUTH_COOKIE'],
+            key=settings.SIMPLE_JWT["AUTH_COOKIE"],
             value=access_token,
             **cookie_settings
         )
 
-        response.set_cookie(
-            key="refresh_token", 
-            value=refresh_token,
-            **cookie_settings
-        )
+        response.set_cookie(key="refresh_token", value=refresh_token, **cookie_settings)
 
         return response
