@@ -27,7 +27,10 @@ class RegistrationView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             user.username = create_username(user.email)
-            user.is_active = False
+            if settings.DEBUG: 
+                user.is_active = True
+            else:
+                user.is_active = False
             user.save()
 
             token = default_token_generator.make_token(user)
