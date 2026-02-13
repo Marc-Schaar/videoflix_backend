@@ -1,4 +1,3 @@
-from django.contrib.auth import logout
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -16,6 +15,7 @@ from app_auth.models import User
 
 from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
 from .services.send_mail import send_activation_mail
+from .permissions import HasRefreshTokenCookie
 from .utils import create_username
 
 
@@ -113,24 +113,34 @@ class LoginView(TokenObtainPairView):
 
 
 class LogOutView(APIView):
+    permission_classes = [HasRefreshTokenCookie]
+    authentication_classes = []
+
     def post(self, request):
-        response = Response(
-            {
-                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
-            },
-            status=200,
-        )
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh-Token required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         access_cookie_name = settings.SIMPLE_JWT.get("AUTH_COOKIE", "access_token")
 
-        response.delete_cookie(access_cookie_name)
-        response.delete_cookie("refresh_token")
-
         try:
-            refresh_token = request.COOKIES.get("refresh_token")
             token = RefreshToken(refresh_token)
             token.blacklist()
 
         except Exception:
             pass
+
+        response = Response(
+            {
+                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
+            },
+            status=status.HTTP_200_OK,
+        )
+        response.delete_cookie(access_cookie_name)
+        response.delete_cookie("refresh_token")
+
         return response

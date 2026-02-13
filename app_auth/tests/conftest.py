@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from rest_framework.test import APIClient
 
-from utils import create_username
+from app_auth.api.utils import create_username
 
 
 @pytest.fixture
