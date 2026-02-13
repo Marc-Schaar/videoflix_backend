@@ -144,3 +144,7 @@ class LogOutView(APIView):
         response.delete_cookie("refresh_token")
 
         return response
+
+
+class TokenRefreshView(APIView):
+    pass
