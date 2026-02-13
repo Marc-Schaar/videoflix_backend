@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 @pytest.mark.django_db
 def test_token_refresh_success(api_client, user):
-    url = reverse("token_refresh")  
+    url = reverse("token-refresh")  
 
     refresh = RefreshToken.for_user(user)
     refresh_token_str = str(refresh)
