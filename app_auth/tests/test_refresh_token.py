@@ -2,7 +2,10 @@ import pytest
 from django.urls import reverse
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
+)
 
 
 @pytest.mark.django_db
@@ -56,6 +59,7 @@ def test_token_refresh_clears_cookies_on_invalid_token(api_client):
     access_cookie = settings.SIMPLE_JWT["AUTH_COOKIE"]
     assert response.cookies[access_cookie].value == ""
 
+
 @pytest.mark.django_db
 def test_token_refresh_fails_with_expired_token(api_client, user):
     url = reverse("token-refresh")
@@ -86,4 +90,6 @@ def test_token_refresh_rotates_and_blacklists(api_client, user):
     assert new_refresh_str != old_refresh_str
 
     old_token_entry = OutstandingToken.objects.filter(token=old_refresh_str).first()
-    assert BlacklistedToken.objects.filter(token=old_token_entry).exists(), "Alter Token wurde nicht geblacklisted!"
+    assert BlacklistedToken.objects.filter(
+        token=old_token_entry
+    ).exists(), "Alter Token wurde nicht geblacklisted!"

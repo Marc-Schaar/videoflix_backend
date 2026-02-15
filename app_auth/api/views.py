@@ -157,7 +157,7 @@ class TokenRefreshView(TokenRefreshView):
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:
-            response= Response(
+            response = Response(
                 {"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -187,9 +187,7 @@ class TokenRefreshView(TokenRefreshView):
 
         if new_refresh_token:
             response.set_cookie(
-                key="refresh_token",
-                value=new_refresh_token,
-                **cookie_settings
+                key="refresh_token", value=new_refresh_token, **cookie_settings
             )
 
         return response
