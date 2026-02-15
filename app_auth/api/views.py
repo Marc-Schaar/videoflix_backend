@@ -1,4 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
+
+
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
@@ -14,13 +17,14 @@ from rest_framework.response import Response
 from app_auth.models import User
 
 from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
-from .services.send_mail import send_activation_mail
+from .services.send_mail import send_activation_mail, send_password_reset_mail
 from .permissions import HasRefreshTokenCookie
 from .utils import create_username
 
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
+    authentication_classes = []
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
@@ -44,7 +48,7 @@ class RegistrationView(APIView):
                     "id": user.id,
                     "email": user.email,
                 },
-                "token": uidb64,
+                "token": token,
             }
 
             return Response(data, status=status.HTTP_201_CREATED)
@@ -104,7 +108,7 @@ class LoginView(TokenObtainPairView):
         response.set_cookie(
             key=settings.SIMPLE_JWT["AUTH_COOKIE"],
             value=access_token,
-            **cookie_settings
+            **cookie_settings,
         )
 
         response.set_cookie(key="refresh_token", value=refresh_token, **cookie_settings)
@@ -182,7 +186,7 @@ class TokenRefreshView(TokenRefreshView):
         response.set_cookie(
             key=settings.SIMPLE_JWT["AUTH_COOKIE"],
             value=access_token,
-            **cookie_settings
+            **cookie_settings,
         )
 
         if new_refresh_token:
@@ -191,3 +195,58 @@ class TokenRefreshView(TokenRefreshView):
             )
 
         return response
+
+
+User = get_user_model()
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        email = request.data.get("email")
+        user = User.objects.filter(email=email).first()
+        if user:
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            send_password_reset_mail(user, token, uidb64)
+
+        return Response(
+            {
+                "detail": "If an account exists with this email, a reset link has been sent."
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            new_password = request.data.get("password")
+            if not new_password:
+                return Response(
+                    {"error": "Passwort ist erforderlich."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            user.set_password(new_password)
+            user.save()
+            return Response(
+                {"detail": "Passwort erfolgreich zurückgesetzt."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            {"error": "Ungültiger oder abgelaufener Link."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )

@@ -160,6 +160,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+AUTH_USER_MODEL = "app_auth.User"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "app_auth.api.authentication.CookieJWTAuthentication",
@@ -194,6 +196,6 @@ else:
 
 
 if DEBUG:
-    FRONTEND_DOMAIN = f"https://localhost:5500/"
+    FRONTEND_DOMAIN = f"https://localhost:5500"
 else:
-    FRONTEND_DOMAIN = f"https://localhost:5500/"
+    FRONTEND_DOMAIN = f"https://localhost:5500"
