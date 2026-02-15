@@ -30,19 +30,27 @@ def test_reset_confirm_updates_password(api_client, user):
         token = default_token_generator.make_token(user)
 
         url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+        payload = {
+            "new_password": "newsecurepassword",
+            "confirm_password": "newsecurepassword"
+        }
 
-        new_pw = "New-Secure-Password-2026"
-        response = api_client.post(url, {"password": new_pw})
+        response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_200_OK
         user.refresh_from_db()
-        assert user.check_password(new_pw)
+        assert user.check_password(payload["new_password"])
 
 def test_reset_confirm_invalid_token_fails(api_client, user):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': "invalid-token"})
 
-        response = api_client.post(url, {"password": "new-password"})
+        payload = {
+            "new_password": "newsecurepassword",
+            "confirm_password": "newsecurepassword"
+        }
+
+        response = api_client.post(url, payload)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
@@ -51,8 +59,12 @@ def test_reset_token_usage_once_only(api_client, user):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
         url = reverse('password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+        payload = {
+            "new_password": "newsecurepassword",
+            "confirm_password": "newsecurepassword"
+        }
 
-        api_client.post(url, {"password": "password123"})
+        api_client.post(url, payload)
 
-        response = api_client.post(url, {"password": "newpassword456"})
+        response = api_client.post(url, payload)
         assert response.status_code == status.HTTP_400_BAD_REQUEST

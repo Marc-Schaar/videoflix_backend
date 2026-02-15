@@ -4,6 +4,15 @@ from app_auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
+class PasswordResetSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True,)
+    confirm_password = serializers.CharField(write_only=True,)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"password": "Passwords do not match."})
+        return data
+
 class RegistrationSerializer(serializers.ModelSerializer):
     confirmed_password = serializers.CharField(write_only=True)
 

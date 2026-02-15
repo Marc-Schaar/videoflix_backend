@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from app_auth.models import User
 
-from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer
+from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer, PasswordResetSerializer
 from .services.send_mail import send_activation_mail, send_password_reset_mail
 from .permissions import HasRefreshTokenCookie
 from .utils import create_username
@@ -232,21 +232,21 @@ class PasswordResetConfirmView(APIView):
             user = None
 
         if user is not None and default_token_generator.check_token(user, token):
-            new_password = request.data.get("password")
-            if not new_password:
+
+            serializer = PasswordResetSerializer(data=request.data)
+            if serializer.is_valid():
+                user.set_password(serializer.validated_data['new_password'])
+                user.save()
+
                 return Response(
-                    {"error": "Passwort ist erforderlich."},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {"detail": "Your Password has been successfully reset."},
+                    status=status.HTTP_200_OK,
                 )
 
-            user.set_password(new_password)
-            user.save()
-            return Response(
-                {"detail": "Passwort erfolgreich zurückgesetzt."},
-                status=status.HTTP_200_OK,
-            )
 
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         return Response(
-            {"error": "Ungültiger oder abgelaufener Link."},
+            {"error": "This password reset link is invalid or has already been used."},
             status=status.HTTP_400_BAD_REQUEST,
         )
