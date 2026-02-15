@@ -53,7 +53,7 @@ def send_password_reset_mail(user, token, uidb64):
     text_content = strip_tags(html_content)
 
     msg = EmailMultiAlternatives(
-        subject="Passwort zurücksetzen",
+        subject="Reset your Password",
         body=text_content,
         from_email=settings.DEFAULT_FROM_EMAIL,
         to=[user.email],
