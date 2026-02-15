@@ -147,7 +147,6 @@ class LogOutView(APIView):
 
 
 class TokenRefreshView(TokenRefreshView):
-
     permission_classes = [HasRefreshTokenCookie]
 
     def post(self, request, *args, **kwargs):
@@ -158,11 +157,16 @@ class TokenRefreshView(TokenRefreshView):
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:
-            return Response(
+            response= Response(
                 {"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
+            response.delete_cookie(settings.SIMPLE_JWT["AUTH_COOKIE"])
+            response.delete_cookie("refresh_token")
+            return response
+
         access_token = serializer.validated_data.get("access")
+        new_refresh_token = serializer.validated_data.get("refresh")
 
         response = Response(
             {"detail": "Token refreshed", "access": access_token},
@@ -180,5 +184,12 @@ class TokenRefreshView(TokenRefreshView):
             value=access_token,
             **cookie_settings
         )
+
+        if new_refresh_token:
+            response.set_cookie(
+                key="refresh_token",
+                value=new_refresh_token,
+                **cookie_settings
+            )
 
         return response
