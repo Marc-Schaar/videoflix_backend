@@ -57,8 +57,9 @@ class RegistrationView(APIView):
 
 
 class ActivateView(APIView):
-    permission_class = AllowAny
-
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
     def get(self, request, uidb64, token):
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
