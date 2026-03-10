@@ -41,7 +41,7 @@ class RegistrationView(APIView):
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-            send_activation_mail(user, token, uidb64)
+            send_activation_mail.delay(user.id, token, uidb64)
 
             data = {
                 "user": {
@@ -212,7 +212,7 @@ class PasswordResetRequestView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
 
-            send_password_reset_mail(user, token, uidb64)
+            send_password_reset_mail.delay(user.id, token, uidb64)
 
         return Response(
             {
