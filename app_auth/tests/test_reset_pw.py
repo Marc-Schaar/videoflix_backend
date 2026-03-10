@@ -7,11 +7,21 @@ from django.utils.encoding import force_bytes
 from rest_framework import status
 
 @pytest.mark.django_db
-def test_reset_request_sends_email( api_client, user):
+def test_reset_request_sends_email( api_client, user, settings):
+        settings.RQ_QUEUES['default']['ASYNC'] = False
+
         url = reverse('password_reset')
-        response = api_client.post(url, {"email": user.email})
+        response = api_client.post(url, {"email": user.email}, format="json")
 
         assert response.status_code == status.HTTP_200_OK
+        
+        assert len(mail.outbox) == 1
+        sent_mail = mail.outbox[0]
+        assert "Reset your Password" in sent_mail.subject
+        assert sent_mail.to == [user.email]
+
+        assert settings.FRONTEND_DOMAIN in sent_mail.body
+        assert "confirm_password.html" in sent_mail.body
 
 
 @pytest.mark.django_db
