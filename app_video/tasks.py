@@ -1,8 +1,8 @@
 import subprocess
 import os
+import shutil
 
-
-def convert_video(source, resolution):
+def convert_video(instance, resolution): 
     resolutions = {
         "480p":  "hd480",
         "720p":  "hd720",
@@ -11,25 +11,46 @@ def convert_video(source, resolution):
     }
 
     if resolution not in resolutions:
-        print(f"Auflösung {resolution} wird nicht unterstützt.")
+        print(f"Resolution {resolution} is not supported.")
         return
+    source_path = instance.video_file.path
 
-    file_root, _ = os.path.splitext(source)
+    file_root, _ = os.path.splitext(source_path)
     new_file = f"{file_root}_{resolution}.mp4"
 
     cmd = [
-        'ffmpeg', '-i', source,
+        'ffmpeg', '-i', source_path, 
         '-s', resolutions[resolution],
         '-c:v', 'libx264',
         '-crf', '23',
         '-c:a', 'aac',
-        '-y', 
+        '-y',
         new_file
     ]
 
     try:
-        print(f"Konvertiere zu {resolution}...")
+        print(f"Converting to {resolution}...")
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"Fertig: {new_file}")
+        print(f"Done: {new_file}")
     except subprocess.CalledProcessError as e:
-        print(f"Fehler: {e.stderr}")
+        print(f"FFmpeg Error: {e.stderr}")
+
+
+def delete_video_directory(instance):
+    """
+    Deletes the entire directory containing the video, 
+    thumbnails, and all converted versions.
+    """
+    if instance.video_file:
+        # Get the directory path (videos/<uuid>/)
+        # instance.video_file.path is: media/videos/<uuid>/source/file.mp4
+        # We want to go up two levels to delete the <uuid> folder
+        file_path = instance.video_file.path
+        directory_to_delete = os.path.dirname(os.path.dirname(file_path))
+
+        if os.path.exists(directory_to_delete):
+            try:
+                shutil.rmtree(directory_to_delete)
+                print(f"Successfully removed directory: {directory_to_delete}")
+            except Exception as e:
+                print(f"Error deleting directory {directory_to_delete}: {e}")

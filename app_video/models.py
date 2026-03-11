@@ -1,14 +1,17 @@
-import uuid
 from django.db import models
+from django.utils.text import slugify
 
 
 def video_upload_path(instance, filename):
     ext = filename.split('.')[-1]
-    filename = f"{uuid.uuid4()}.{ext}" 
-    return f"videos/{uuid.uuid4()}/{filename}"
+    folder_name = slugify(instance.id) if instance.id else "temp_video"
 
-
-
+    if ext.lower() in ['jpg', 'jpeg', 'png', 'webp']:
+            subfolder = "thumbnails"
+    else:
+            subfolder = "source"
+    
+    return f"videos/{folder_name}/{subfolder}/{filename}"
 
 class Video(models.Model):
     title = models.CharField(max_length=250, null= False, blank=False)

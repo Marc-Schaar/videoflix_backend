@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
     "app_auth",
-    "app_video",
+    "app_video.apps.AppVideoConfig",
 ]
 
 MIDDLEWARE = [
