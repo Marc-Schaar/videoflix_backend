@@ -11,7 +11,6 @@ def convert_video(instance, resolution):
     }
 
     if resolution not in resolutions:
-        print(f"Resolution {resolution} is not supported.")
         return
     source_path = instance.video_file.path
 
@@ -29,9 +28,7 @@ def convert_video(instance, resolution):
     ]
 
     try:
-        print(f"Converting to {resolution}...")
         subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print(f"Done: {new_file}")
     except subprocess.CalledProcessError as e:
         print(f"FFmpeg Error: {e.stderr}")
 
@@ -42,15 +39,11 @@ def delete_video_directory(instance):
     thumbnails, and all converted versions.
     """
     if instance.video_file:
-        # Get the directory path (videos/<uuid>/)
-        # instance.video_file.path is: media/videos/<uuid>/source/file.mp4
-        # We want to go up two levels to delete the <uuid> folder
         file_path = instance.video_file.path
         directory_to_delete = os.path.dirname(os.path.dirname(file_path))
 
         if os.path.exists(directory_to_delete):
             try:
                 shutil.rmtree(directory_to_delete)
-                print(f"Successfully removed directory: {directory_to_delete}")
             except Exception as e:
                 print(f"Error deleting directory {directory_to_delete}: {e}")
