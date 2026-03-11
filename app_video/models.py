@@ -1,10 +1,9 @@
 from django.db import models
-from django.utils.text import slugify
 
 
 def video_upload_path(instance, filename):
     ext = filename.split('.')[-1]
-    folder_name = slugify(instance.id) if instance.id else "temp_video"
+    folder_name = instance.id
 
     if ext.lower() in ['jpg', 'jpeg', 'png', 'webp']:
             subfolder = "thumbnails"
