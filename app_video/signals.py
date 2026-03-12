@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from django.db import transaction
+from django.core.cache import cache
 
 from .models import Video, VIDEO_RESOLUTIONS
 from .tasks import convert_video, create_thumbnail, delete_video_files
@@ -9,6 +10,7 @@ from .tasks import convert_video, create_thumbnail, delete_video_files
 @receiver(post_save, sender=Video)
 def video_post_save(sender, instance, created, **kwargs):
     if created:
+        cache.clear()
         transaction.on_commit(lambda: create_thumbnail.delay(instance.id))
       
         for res in VIDEO_RESOLUTIONS.keys():

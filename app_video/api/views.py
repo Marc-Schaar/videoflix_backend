@@ -1,6 +1,8 @@
 from django.http import FileResponse
-from rest_framework import generics
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 
+from rest_framework import generics
 from app_video.models import Video
 from .serializers import VideoSerializer
 
@@ -11,6 +13,10 @@ from .serializers import VideoSerializer
 class VideoListView(generics.ListAPIView):
     queryset = Video.objects.all().order_by('-created_at')
     serializer_class = VideoSerializer
+
+    @method_decorator(cache_page(60 * 15))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
 
 class VideoPlaylistView(generics.RetrieveAPIView):
