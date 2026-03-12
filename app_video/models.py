@@ -2,18 +2,42 @@ import os
 from django.db import models
 from django.http import Http404
 
+"""Data model and helpers for application videos.
+
+The :class:`Video` model stores metadata and multiple FileField references to
+converted HLS playlists.  The module also defines helper functions for
+constructing upload paths.
+"""
+
 VIDEO_RESOLUTIONS = {"480p": "hd480", "720p": "hd720", "1080p": "hd1080", "4k": "4k"}
 
 
 def video_upload_path(instance, filename):
+    """Return the storage path for a newly uploaded source video.
+
+    Uploaded files are placed directly under ``videos/source/`` using their
+    original filename.
+    """
     return f"videos/source/{filename}"
 
 
 def thumbnail_upload_path(instance, filename):
+    """Return the path for storing generated thumbnails.
+
+    Thumbnails live under ``videos/thumbnails/`` and keep the supplied filename
+    (usually derived from the source video name).
+    """
     return f"videos/thumbnails/{filename}"
 
 
 class Video(models.Model):
+    """Primary model representing an uploaded video.
+
+    Fields for each resolution are populated asynchronously by background jobs
+    after the initial upload.  ``thumbnail_url`` holds the generated image
+    used across the frontend.
+    """
+
     title = models.CharField(max_length=250, null=False, blank=False)
     description = models.TextField(max_length=1000, null=False, blank=False)
     category = models.CharField(max_length=250, null=False, blank=False)
@@ -31,6 +55,13 @@ class Video(models.Model):
         return self.title
 
     def get_hls_playlist_path(self, resolution):
+        """Return the filesystem path of an HLS playlist for ``resolution``.
+
+        Raises ``Http404`` if the requested resolution is not available or if the
+        underlying file cannot be found.  This is primarily used by the API
+        views to forward requests to the correct media file.
+        """
+
         field_name = f"video_{resolution}"
         video_field = getattr(self, field_name, None)
 
@@ -43,6 +74,14 @@ class Video(models.Model):
         return video_field.path
 
     def get_hls_path(self, resolution, segment=None):
+        """Return the absolute path to either a playlist or a specific segment.
+
+        If ``segment`` is provided the method ignores the resolution field and
+        joins the supplied filename with the source video's directory.  This
+        enables playback of individual ``.ts`` chunks.  Non‑existent files
+        raise ``Http404``.
+        """
+
         if segment:
             video_dir = os.path.dirname(self.video_file.path)
             path = os.path.join(video_dir, segment)

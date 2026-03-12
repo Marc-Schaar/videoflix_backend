@@ -16,9 +16,25 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+"""Background jobs used by the video application.
+
+Each task is decorated with ``django_rq.job`` and performs discrete work such
+as converting source videos to HLS, generating thumbnails, or cleaning up
+files after a video record is removed.
+"""
+
 
 @job
 def convert_video(instance_id, resolution_key):
+    """Worker that transcodes a video to the specified resolution.
+
+    The task locates the ``Video`` instance by ``instance_id`` and builds an
+    appropriate ffmpeg command targeting the HLS output format.  On success it
+    updates the model field and performs a small cleanup of stray directories.
+    If the source object cannot be found the job logs a warning and exits
+    gracefully.
+    """
+
     time.sleep(1)
     try:
         instance = Video.objects.filter(pk=instance_id).first()
@@ -64,6 +80,15 @@ def convert_video(instance_id, resolution_key):
 
 @job
 def create_thumbnail(instance_id):
+    """Extract a single-frame thumbnail from the source video.
+
+    The job finds the video instance, constructs a short ffmpeg command that
+    seeks to the one-second mark, and writes the resulting image to a temporary
+    path.  If the operation succeeds the thumbnail is read back into Django's
+    storage and the temporary file is removed.  Failures are logged but do not
+    raise an exception so that downstream processing can continue.
+    """
+
     time.sleep(1)
     try:
         instance = Video.objects.filter(pk=instance_id).first()
