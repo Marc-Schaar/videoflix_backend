@@ -11,7 +11,7 @@ def get_video_paths(instance, resolution_key=None):
     file_root, _ = os.path.splitext(source_path)
 
     if resolution_key:
-        new_file = f"{file_root}_{resolution_key}.mp4"
+        new_file = f"{file_root}_{resolution_key}.m3u8"
         return source_path, new_file
 
     thumb_path = f"{file_root}_thumb.jpg"
@@ -30,6 +30,8 @@ def run_ffmpeg(cmd, task_name):
 def update_video_instance(instance, field_name, file_path):
     if os.path.exists(file_path):
         rel_path = os.path.relpath(file_path, settings.MEDIA_ROOT).replace("\\", "/")
-        setattr(instance, field_name, rel_path)
-        instance.save(update_fields=[field_name])
-        logger.info(f"DATABASE: {field_name} erfolgreich aktualisiert.")
+
+        from .models import Video
+        Video.objects.filter(pk=instance.id).update(**{field_name: rel_path})
+
+        logger.info(f"DATABASE: {field_name} erfolgreich aktualisiert (via Queryset-Update).")
