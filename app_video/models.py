@@ -73,25 +73,35 @@ class Video(models.Model):
 
         return video_field.path
 
-    def get_hls_path(self, resolution, segment=None):
-        """Return the absolute path to either a playlist or a specific segment.
 
-        If ``segment`` is provided the method ignores the resolution field and
-        joins the supplied filename with the source video's directory.  This
-        enables playback of individual ``.ts`` chunks.  Non‑existent files
-        raise ``Http404``.
+    
+    def get_hls_path(self, resolution, segment=None):
+        """
+        Return the absolute path to either a resolution-specific playlist or a segment.
+
+        The method uses the resolution field to locate the corresponding directory 
+        (e.g., videos/{id}/{resolution}/). If a ``segment`` name is provided, 
+        it returns the path to that specific file within that directory. 
+        Otherwise, it returns the path to the HLS playlist (.m3u8).
+
+        Raises:
+            Http404: If the resolution is not supported or the file does not exist.
         """
 
+        field_name = f"video_{resolution}"
+        video_field = getattr(self, field_name, None)
+
+        if not video_field or not video_field.name:
+            raise Http404(f"Resolution {resolution} is not supported.")
+
+        res_dir = os.path.dirname(video_field.path)
+
         if segment:
-            video_dir = os.path.dirname(self.video_file.path)
-            path = os.path.join(video_dir, segment)
+            path = os.path.join(res_dir, segment)
         else:
-            field_name = f"video_{resolution}"
-            video_field = getattr(self, field_name, None)
-            if not video_field or not video_field.name:
-                raise Http404("Resolutiuon is not supported.")
             path = video_field.path
 
         if not os.path.exists(path):
-            raise Http404("File not found.")
+            raise Http404(f"File not found: {path}")
+
         return path
