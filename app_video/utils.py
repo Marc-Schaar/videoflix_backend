@@ -34,4 +34,4 @@ def update_video_instance(instance, field_name, file_path):
         from .models import Video
         Video.objects.filter(pk=instance.id).update(**{field_name: rel_path})
 
-        logger.info(f"DATABASE: {field_name} erfolgreich aktualisiert (via Queryset-Update).")
+        logger.info(f"DATABASE: {field_name} succesfully updated (by Queryset-Update).")
