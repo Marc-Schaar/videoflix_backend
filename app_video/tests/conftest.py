@@ -57,8 +57,12 @@ def sync_rq(monkeypatch):
     fixture is required to execute the tasks during model save/delete.
     """
 
-    monkeypatch.setattr(create_thumbnail, "delay", lambda instance_id: create_thumbnail(instance_id))
-    monkeypatch.setattr(convert_video, "delay", lambda instance_id, res: convert_video(instance_id, res))
+    monkeypatch.setattr(
+        create_thumbnail, "delay", lambda instance_id: create_thumbnail(instance_id)
+    )
+    monkeypatch.setattr(
+        convert_video, "delay", lambda instance_id, res: convert_video(instance_id, res)
+    )
 
 
 @pytest.fixture

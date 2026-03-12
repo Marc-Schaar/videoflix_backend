@@ -16,7 +16,9 @@ def test_video_creation_and_conversion(video_instance, fake_run_ffmpeg):
     for res in VIDEO_RESOLUTIONS.keys():
         field = getattr(video, f"video_{res}")
         assert field and field.name, f"Feld für {res} ist leer"
-        assert os.path.exists(field.path), f"Datei für {res} wurde nicht physisch erstellt"
+        assert os.path.exists(
+            field.path
+        ), f"Datei für {res} wurde nicht physisch erstellt"
 
 
 @pytest.mark.django_db

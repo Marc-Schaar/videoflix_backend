@@ -29,7 +29,7 @@ class Video(models.Model):
 
     def __str__(self):
         return self.title
-    
+
     def get_hls_playlist_path(self, resolution):
         field_name = f"video_{resolution}"
         video_field = getattr(self, field_name, None)
