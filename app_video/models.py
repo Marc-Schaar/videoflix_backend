@@ -26,7 +26,9 @@ class Video(models.Model):
     video_720p = models.FileField(upload_to=video_upload_path, null=True, blank=True)
     video_1080p = models.FileField(upload_to=video_upload_path, null=True, blank=True)
     video_4k = models.FileField(upload_to=video_upload_path, null=True, blank=True)
-    thumbnail_url = models.ImageField(upload_to=video_upload_path, null=True, blank=True)
+    thumbnail_url = models.ImageField(
+        upload_to=video_upload_path, null=True, blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

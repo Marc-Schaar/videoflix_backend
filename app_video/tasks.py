@@ -11,6 +11,7 @@ from .utils import get_video_paths, run_ffmpeg, update_video_instance
 
 logger = logging.getLogger(__name__)
 
+
 @job
 def convert_video(instance_id, resolution_key):
     try:
@@ -37,7 +38,6 @@ def convert_video(instance_id, resolution_key):
             "-y",
             target,
         ]
-
 
         if run_ffmpeg(cmd, f"Convert {resolution_key}"):
             update_video_instance(instance, f"video_{resolution_key}", target)
@@ -66,12 +66,18 @@ def create_thumbnail(instance_id):
             thumb_path,
         ]
 
+        if not os.path.exists(source):
+            logger.error(f"Quelldatei nicht gefunden: {source}")
+            return
+
         if run_ffmpeg(cmd, "Thumbnail"):
-                with open(thumb_path, "rb") as f:
-                    instance.thumbnail_url.save(f"thumb_{instance.id}.jpg", ContentFile(f.read()), save=False)
-                    instance.save(update_fields=['thumbnail_url'])
-                os.remove(thumb_path)
-                logger.info(f"SUCCESS: Thumbnail für {instance.title} erstellt.")
+            with open(thumb_path, "rb") as f:
+                instance.thumbnail_url.save(
+                    f"thumb_{instance.id}.jpg", ContentFile(f.read()), save=False
+                )
+                instance.save(update_fields=["thumbnail_url"])
+            os.remove(thumb_path)
+            logger.info(f"SUCCESS: Thumbnail für {instance.title} erstellt.")
 
     except Video.DoesNotExist:
         logger.error(f"Video with ID {instance_id} not found.")
