@@ -1,5 +1,7 @@
-from django.db import models
 import uuid
+import os
+from django.db import models
+from django.http import Http404
 
 VIDEO_RESOLUTIONS = {"480p": "hd480", "720p": "hd720", "1080p": "hd1080", "4k": "4k"}
 
@@ -33,3 +35,30 @@ class Video(models.Model):
 
     def __str__(self):
         return self.title
+    
+    def get_hls_playlist_path(self, resolution):
+        field_name = f"video_{resolution}"
+        video_field = getattr(self, field_name, None)
+
+        if not video_field or not video_field.name:
+            raise Http404(f"Auflösung {resolution} wird nicht unterstützt.")
+
+        if not os.path.exists(video_field.path):
+            raise Http404("Playlist-Datei wurde auf dem Server nicht gefunden.")
+
+        return video_field.path
+
+    def get_hls_path(self, resolution, segment=None):
+        if segment:
+            video_dir = os.path.dirname(self.video_file.path)
+            path = os.path.join(video_dir, segment)
+        else:
+            field_name = f"video_{resolution}"
+            video_field = getattr(self, field_name, None)
+            if not video_field or not video_field.name:
+                raise Http404("Auflösung nicht unterstützt.")
+            path = video_field.path
+
+        if not os.path.exists(path):
+            raise Http404("Datei nicht gefunden.")
+        return path

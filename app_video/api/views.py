@@ -1,12 +1,9 @@
-import os
-
-from django.http import HttpResponse, Http404, FileResponse
-from django.shortcuts import get_object_or_404
+from django.http import FileResponse
 from rest_framework import generics
-from rest_framework.views import APIView
 
 from app_video.models import Video
 from .serializers import VideoSerializer
+
 
 
 
@@ -16,26 +13,26 @@ class VideoListView(generics.ListAPIView):
     serializer_class = VideoSerializer
 
 
-class VideoPlaylistView(APIView):
+class VideoPlaylistView(generics.RetrieveAPIView):
+    queryset = Video.objects.all()
+    lookup_field = 'id'
+    lookup_url_kwarg = 'movie_id'
 
-    def get(self, request, movie_id, resolution, file_name=None, is_playlist=False):
-        video = get_object_or_404(Video, id=movie_id)
+   
+    def build_file_response(self, file_path, content_type):
+        response = FileResponse(open(file_path, 'rb'), content_type=content_type)
+        response['Cache-Control'] = 'public, max-age=3600'
+        return response
 
-        if is_playlist:
-            field_name = f"video_{resolution}"
-            video_field = getattr(video, field_name, None)
 
-            if not video_field or not video_field.name:
-                raise Http404("Resolution not supported")
+    def retrieve(self, request, *args, **kwargs):
+        video = self.get_object()
+        resolution = self.kwargs.get('resolution')
+        segment = kwargs.get('segment')
 
-            file_path = video_field.path
-            content_type = "application/vnd.apple.mpegurl"
-        else:
-            video_dir = os.path.dirname(video.video_file.path)
-            file_path = os.path.join(video_dir, file_name)
-            content_type = "video/MP2T"
+        file_path = video.get_hls_path(resolution, segment)
+        content_type = "video/MP2T" if segment else "application/vnd.apple.mpegurl"
 
-        if not os.path.exists(file_path):
-            raise Http404(f"File not found.")
+        return self.build_file_response(file_path, content_type)
 
-        return FileResponse(open(file_path, 'rb'), content_type=content_type)
+   
