@@ -38,6 +38,8 @@ CSRF_TRUSTED_ORIGINS = os.environ.get(
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
     "https://videoflix.marc-schaar.com",
@@ -189,8 +191,8 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_COOKIE": "access_token",
     "AUTH_COOKIE_HTTP_ONLY": True,
-    "AUTH_COOKIE_SECURE": not DEBUG,
-    "AUTH_COOKIE_SAMESITE": "Lax",
+    "AUTH_COOKIE_SECURE": True,
+    "AUTH_COOKIE_SAMESITE": "None",
     "USER_ID_FIELD": "email",
 }
 
