@@ -16,7 +16,11 @@ from rest_framework.response import Response
 
 from app_auth.models import User
 
-from .serializers import RegistrationSerializer, CustomTokenObtainPairSerializer, PasswordResetSerializer
+from .serializers import (
+    RegistrationSerializer,
+    CustomTokenObtainPairSerializer,
+    PasswordResetSerializer,
+)
 from .services.send_mail import send_activation_mail, send_password_reset_mail
 from .permissions import HasRefreshTokenCookie
 from .utils import create_username
@@ -59,7 +63,7 @@ class RegistrationView(APIView):
 class ActivateView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
-    
+
     def get(self, request, uidb64, token):
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
@@ -236,7 +240,7 @@ class PasswordResetConfirmView(APIView):
 
             serializer = PasswordResetSerializer(data=request.data)
             if serializer.is_valid():
-                user.set_password(serializer.validated_data['new_password'])
+                user.set_password(serializer.validated_data["new_password"])
                 user.save()
 
                 return Response(
@@ -244,9 +248,8 @@ class PasswordResetConfirmView(APIView):
                     status=status.HTTP_200_OK,
                 )
 
-
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return Response(
             {"error": "This password reset link is invalid or has already been used."},
             status=status.HTTP_400_BAD_REQUEST,

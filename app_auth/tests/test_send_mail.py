@@ -1,11 +1,14 @@
 import pytest
 from django.conf import settings
-from app_auth.api.services.send_mail import send_activation_mail, send_password_reset_mail
+from app_auth.api.services.send_mail import (
+    send_activation_mail,
+    send_password_reset_mail,
+)
 
 
 @pytest.mark.django_db
 def test_send_activation_email(user, mailoutbox):
-    settings.RQ_QUEUES['default']['ASYNC'] = False
+    settings.RQ_QUEUES["default"]["ASYNC"] = False
 
     token = "token123"
     uid = "uid456"
@@ -27,7 +30,7 @@ def test_send_activation_email(user, mailoutbox):
 
 @pytest.mark.django_db
 def test_send_password_reset_email(user, mailoutbox):
-    settings.RQ_QUEUES['default']['ASYNC'] = False
+    settings.RQ_QUEUES["default"]["ASYNC"] = False
 
     token = "reset-token-789"
     uid = "reset-uid-abc"
