@@ -41,10 +41,10 @@ class Video(models.Model):
         video_field = getattr(self, field_name, None)
 
         if not video_field or not video_field.name:
-            raise Http404(f"Auflösung {resolution} wird nicht unterstützt.")
+            raise Http404(f"Resolution {resolution}is not supported.")
 
         if not os.path.exists(video_field.path):
-            raise Http404("Playlist-Datei wurde auf dem Server nicht gefunden.")
+            raise Http404("Playlist File is not found on Server")
 
         return video_field.path
 
@@ -56,9 +56,9 @@ class Video(models.Model):
             field_name = f"video_{resolution}"
             video_field = getattr(self, field_name, None)
             if not video_field or not video_field.name:
-                raise Http404("Auflösung nicht unterstützt.")
+                raise Http404("Resolutiuon is not supported.")
             path = video_field.path
 
         if not os.path.exists(path):
-            raise Http404("Datei nicht gefunden.")
+            raise Http404("File not found.")
         return path
