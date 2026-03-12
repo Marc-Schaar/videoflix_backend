@@ -1,4 +1,3 @@
-import uuid
 import os
 from django.db import models
 from django.http import Http404
@@ -7,19 +6,14 @@ VIDEO_RESOLUTIONS = {"480p": "hd480", "720p": "hd720", "1080p": "hd1080", "4k": 
 
 
 def video_upload_path(instance, filename):
-    ext = filename.split(".")[-1].lower()
-    folder_name = str(instance.id)
+    return f"videos/source/{filename}"
 
-    if ext.lower() in ["jpg", "jpeg", "png", "webp"]:
-        subfolder = "thumbnails"
-    else:
-        subfolder = "source"
 
-    return f"videos/{folder_name}/{subfolder}/{filename}"
+def thumbnail_upload_path(instance, filename):
+    return f"videos/thumbnails/{filename}"
 
 
 class Video(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=250, null=False, blank=False)
     description = models.TextField(max_length=1000, null=False, blank=False)
     category = models.CharField(max_length=250, null=False, blank=False)
@@ -29,7 +23,7 @@ class Video(models.Model):
     video_1080p = models.FileField(upload_to=video_upload_path, null=True, blank=True)
     video_4k = models.FileField(upload_to=video_upload_path, null=True, blank=True)
     thumbnail_url = models.ImageField(
-        upload_to=video_upload_path, null=True, blank=True
+        upload_to=thumbnail_upload_path, null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

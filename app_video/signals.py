@@ -1,20 +1,21 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
+from django.db import transaction
 
 from .models import Video, VIDEO_RESOLUTIONS
-from .tasks import convert_video, create_thumbnail, delete_video_directory
+from .tasks import convert_video, create_thumbnail, delete_video_files
 
 
 @receiver(post_save, sender=Video)
 def video_post_save(sender, instance, created, **kwargs):
     if created:
+        transaction.on_commit(lambda: create_thumbnail.delay(instance.id))
       
         for res in VIDEO_RESOLUTIONS.keys():
-            convert_video.delay(instance.id, res)
+            transaction.on_commit(lambda r=res: convert_video.delay(instance.id, r))
 
-        create_thumbnail.delay(instance.id)
 
 
 @receiver(post_delete, sender=Video)
 def on_video_delete(sender, instance, **kwargs):
-    delete_video_directory(instance)
+   delete_video_files(instance)

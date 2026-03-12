@@ -4,9 +4,9 @@ from .views import VideoListView, VideoPlaylistView
 
 urlpatterns = [
     path("video/", VideoListView.as_view(), name="video-list"),
-    path("video/<uuid:movie_id>/<str:resolution>/index.m3u8",
+    path("video/<int:movie_id>/<str:resolution>/index.m3u8",
          VideoPlaylistView.as_view(),
          name="video-playlist"),
-    path('video/<uuid:movie_id>/<str:resolution>/<str:segment>',
+    path('video/<int:movie_id>/<str:resolution>/<str:segment>',
          VideoPlaylistView.as_view(), name="video-segment"),
 ]

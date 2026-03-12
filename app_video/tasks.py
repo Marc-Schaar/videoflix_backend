@@ -87,18 +87,26 @@ def create_thumbnail(instance_id):
 
     except Exception as e:
         logger.error(f"Fehler beim Thumbnail: {e}", exc_info=True)
-        
-def delete_video_directory(instance):
-    """
-    Deletes the entire directory containing the video,
-    thumbnails, and all converted versions.
-    """
-    if instance.video_file:
-        file_path = instance.video_file.path
-        directory_to_delete = os.path.dirname(os.path.dirname(file_path))
 
-        if os.path.exists(directory_to_delete):
-            try:
-                shutil.rmtree(directory_to_delete)
-            except Exception as e:
-                logger.error(f"Error deleting directory {directory_to_delete}: {e}")
+
+def delete_video_files(instance):
+    """
+    Deletes the video files and thumbnail when the model is deleted.
+    """
+    fields_to_check = [
+        instance.video_file,
+        instance.video_480p,
+        instance.video_720p,
+        instance.video_1080p,
+        instance.video_4k,
+        instance.thumbnail_url
+    ]
+
+    for field in fields_to_check:
+        if field and field.name:
+            file_path = field.path
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    logger.error(f"Error deleting file {file_path}: {e}")
