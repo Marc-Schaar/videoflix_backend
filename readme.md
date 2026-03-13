@@ -1,4 +1,4 @@
-# ![Videoflix Logo](static/images/logo_.png)  Backend API
+# ![Videoflix Logo](static/images/logo.svg)  Backend API
 
 This is a high-performance video streaming REST API, inspired by Netflix, built with **Django** and **Django REST Framework**.
 The platform features automated video processing via **ffmpeg**, background task queuing with **Redis**, and a fully containerized environment using **Docker**.
