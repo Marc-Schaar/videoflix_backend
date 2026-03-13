@@ -50,6 +50,7 @@ def convert_video(instance_id, resolution_key):
 
         cmd = [
             "ffmpeg",
+            "-nostdin",
             "-i",
             source,
             "-s",
@@ -108,6 +109,7 @@ def create_thumbnail(instance_id):
 
         cmd = [
             "ffmpeg",
+            "-nostdin",
             "-ss",
             "00:00:01",
             "-i",
