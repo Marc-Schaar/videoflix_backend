@@ -24,7 +24,7 @@ The easiest way to run the project. Docker handles Python, PostgreSQL, Redis, an
 
 ### 2. Manual Installation (Development Only)
 If you wish to run the project outside of Docker, you must install:
-- **Python 3.12+**
+- **Python 3.10+**
 - **FFMPEG:** 
 - **Redis:** 
 
@@ -48,7 +48,7 @@ brew install ffmpeg
 choco install ffmpeg
 ```
 
-#### Redis
+#### **Redis**
 Required for the background worker (RQ).
 ```bash
 # Ubuntu/Debian
