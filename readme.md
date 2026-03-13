@@ -112,12 +112,21 @@ python3 -m venv env
 source env/bin/activate  # Windows: .\env\Scripts\activate
 pip install -r requirements.txt
 ```
-2. **Run Migrations & Server**:
+2. **Database Setup (PostgreSQL)**:
+Ensure PostgreSQL is installed and running. Open your PostgreSQL terminal (psql) and run:
+```sql
+CREATE DATABASE your_db_name;
+CREATE USER your_db_user WITH PASSWORD 'your_db_password';
+GRANT ALL PRIVILEGES ON DATABASE your_db_name TO your_db_user;
+```
+Make sure these credentials match the ones you set in your .env file.
+
+3. **Run Migrations & Server**:
 ```bash
 python manage.py migrate
 python manage.py runserver
 ```
-3. **Start the Worker (separate terminal)**:
+4. **Start the Worker (separate terminal)**:
 ```bash
 python manage.py rqworker default
 ```
