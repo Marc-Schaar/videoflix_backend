@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from app_auth.models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .utils import create_username
 
 
 class PasswordResetSerializer(serializers.Serializer):
@@ -11,6 +13,13 @@ class PasswordResetSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(
         write_only=True,
     )
+
+    def create(self, validated_data):
+        user = super().create(validated_data)
+        user.username = create_username(user.email)
+        user.is_active = getattr(settings, "DEBUG", False)
+        user.save()
+        return user
 
     def validate(self, data):
         if data["new_password"] != data["confirm_password"]:

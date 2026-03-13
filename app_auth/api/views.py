@@ -1,19 +1,13 @@
+# Nur noch das Nötigste in der views.py
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes, force_str
-from django.conf import settings
 from django.db import transaction
 
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.response import Response
-
-
-from app_auth.models import User
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from .serializers import (
     RegistrationSerializer,
@@ -22,8 +16,18 @@ from .serializers import (
 )
 from .services.send_mail import send_activation_mail, send_password_reset_mail
 from .permissions import HasRefreshTokenCookie
-from .utils import create_username
+from .utils import (
+    set_auth_cookies,
+    get_error_response,
+    get_auth_response_data,
+    get_user_from_uidb64,
+    generate_auth_tokens,
+    delete_auth_cookies,
+    blacklist_refresh_token,
+)
+from .messages import AuthMessages
 
+User = get_user_model()
 
 class RegistrationView(APIView):
     permission_classes = [AllowAny]
@@ -31,34 +35,18 @@ class RegistrationView(APIView):
 
     def post(self, request):
         serializer = RegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if serializer.is_valid():
-            user = serializer.save()
-            user.username = create_username(user.email)
-            if settings.DEBUG:
-                user.is_active = True
-            else:
-                user.is_active = False
-            user.save()
+        user = serializer.save()
+        uidb64, token = generate_auth_tokens(user)
 
-            token = default_token_generator.make_token(user)
-            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+        transaction.on_commit(
+            lambda: send_activation_mail.delay(user.id, token, uidb64)
+        )
 
-            transaction.on_commit(
-                lambda: send_activation_mail.delay(user.id, token, uidb64)
-            )
+        data = get_auth_response_data(user, token)
 
-            data = {
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                },
-                "token": token,
-            }
-
-            return Response(data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class ActivateView(APIView):
@@ -66,24 +54,20 @@ class ActivateView(APIView):
     authentication_classes = []
 
     def get(self, request, uidb64, token):
-        try:
-            uid = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
+        user = get_user_from_uidb64(uidb64)
 
-        if user is not None and default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
+        if not user or not default_token_generator.check_token(user, token):
             return Response(
-                {"message": "Account successfully activated."},
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response(
-                {"error": "Invalid or expired token."},
+                {"error": AuthMessages.INVALID_TOKEN},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        user.is_active = True
+        user.save()
+        return Response(
+            {"message": AuthMessages.ACTIVATION_SUCCESS},
+            status=status.HTTP_200_OK,
+        )
 
 
 class LoginView(TokenObtainPairView):
@@ -99,27 +83,13 @@ class LoginView(TokenObtainPairView):
 
         response = Response(
             {
-                "message": "Login successful",
+                "detail": AuthMessages.LOGIN_SUCCESS,
                 "user": {"email": serializer.user.email, "id": serializer.user.id},
             },
             status=status.HTTP_200_OK,
         )
 
-        cookie_settings = {
-            "httponly": settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
-            "secure": settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
-            "samesite": settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
-        }
-
-        response.set_cookie(
-            key=settings.SIMPLE_JWT["AUTH_COOKIE"],
-            value=access_token,
-            **cookie_settings,
-        )
-
-        response.set_cookie(key="refresh_token", value=refresh_token, **cookie_settings)
-
-        return response
+        return set_auth_cookies(response, access_token, refresh_token)
 
 
 class LogOutView(APIView):
@@ -127,33 +97,14 @@ class LogOutView(APIView):
     authentication_classes = []
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")
-
-        if not refresh_token:
-            return Response(
-                {"detail": "Refresh-Token required."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        access_cookie_name = settings.SIMPLE_JWT.get("AUTH_COOKIE", "access_token")
-
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-
-        except Exception:
-            pass
+        blacklist_refresh_token(request)
 
         response = Response(
-            {
-                "detail": "Logout successful! All tokens will be deleted. Refresh token is now invalid."
-            },
+            {"detail": AuthMessages.LOGOUT_SUCCESS},
             status=status.HTTP_200_OK,
         )
-        response.delete_cookie(access_cookie_name)
-        response.delete_cookie("refresh_token")
 
-        return response
+        return delete_auth_cookies(response)
 
 
 class TokenRefreshView(TokenRefreshView):
@@ -167,43 +118,16 @@ class TokenRefreshView(TokenRefreshView):
         try:
             serializer.is_valid(raise_exception=True)
         except Exception:
-            response = Response(
-                {"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED
-            )
-
-            response.delete_cookie(settings.SIMPLE_JWT["AUTH_COOKIE"])
-            response.delete_cookie("refresh_token")
-            return response
+            return get_error_response()
 
         access_token = serializer.validated_data.get("access")
         new_refresh_token = serializer.validated_data.get("refresh")
 
         response = Response(
-            {"detail": "Token refreshed", "access": access_token},
+            {"detail": AuthMessages.TOKEN_REFRESH_SUCCESS, "access": access_token},
             status=status.HTTP_200_OK,
         )
-
-        cookie_settings = {
-            "httponly": settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
-            "secure": settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
-            "samesite": settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
-        }
-
-        response.set_cookie(
-            key=settings.SIMPLE_JWT["AUTH_COOKIE"],
-            value=access_token,
-            **cookie_settings,
-        )
-
-        if new_refresh_token:
-            response.set_cookie(
-                key="refresh_token", value=new_refresh_token, **cookie_settings
-            )
-
-        return response
-
-
-User = get_user_model()
+        return set_auth_cookies(response, access_token, new_refresh_token)
 
 
 class PasswordResetRequestView(APIView):
@@ -214,17 +138,14 @@ class PasswordResetRequestView(APIView):
         email = request.data.get("email")
         user = User.objects.filter(email=email).first()
         if user:
-            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
+            uidb64, token = generate_auth_tokens(user)
 
             transaction.on_commit(
                 lambda: send_password_reset_mail.delay(user.id, token, uidb64)
             )
 
         return Response(
-            {
-                "detail": "If an account exists with this email, a reset link has been sent."
-            },
+            {"detail": AuthMessages.PW_RESET_SENT},
             status=status.HTTP_200_OK,
         )
 
@@ -233,27 +154,21 @@ class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, uidb64, token):
-        try:
-            uid = urlsafe_base64_decode(uidb64).decode()
-            user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            user = None
+        user = get_user_from_uidb64(uidb64)
 
-        if user is not None and default_token_generator.check_token(user, token):
+        if not user or not default_token_generator.check_token(user, token):
+            return Response(
+                {"error": AuthMessages.INVALID_PW_LINK},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            serializer = PasswordResetSerializer(data=request.data)
-            if serializer.is_valid():
-                user.set_password(serializer.validated_data["new_password"])
-                user.save()
+        serializer = PasswordResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-                return Response(
-                    {"detail": "Your Password has been successfully reset."},
-                    status=status.HTTP_200_OK,
-                )
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(serializer.validated_data["new_password"])
+        user.save()
 
         return Response(
-            {"error": "This password reset link is invalid or has already been used."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {"detail": AuthMessages.PW_RESET_SUCCESS},
+            status=status.HTTP_200_OK,
         )
