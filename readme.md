@@ -27,6 +27,7 @@ If you wish to run the project outside of Docker, you must install:
 - **Python 3.10+**
 - **FFMPEG:** 
 - **Redis:** 
+- **PostgreSQL**
 
 #### **Python 3.10+**
 Download from [python.org](https://www.python.org/downloads/) or use your package manager:
@@ -59,6 +60,19 @@ brew install redis
 
 # Windows
 # Use Memurai or run Redis via WSL2 (recommended)
+```
+
+#### **postgreSQL**
+```bash
+# Ubuntu / Debian
+sudo apt update && sudo apt install postgresql postgresql-contrib
+
+# macOS (Homebrew)
+brew install postgresql
+brew services start postgresql
+
+# Windows
+choco install postgresql
 ```
 
 ## Setup & Installation
