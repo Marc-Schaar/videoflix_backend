@@ -49,6 +49,9 @@ def convert_video(instance_id, resolution_key):
         source, target = get_video_paths(instance, resolution_key)
 
         cmd = [
+            "nice",
+            "-n", 
+            "19",
             "ffmpeg",
             "-nostdin",
             "-i",
@@ -108,6 +111,9 @@ def create_thumbnail(instance_id):
             return
 
         cmd = [
+            "nice", 
+            "-n", 
+            "19",
             "ffmpeg",
             "-nostdin",
             "-ss",
