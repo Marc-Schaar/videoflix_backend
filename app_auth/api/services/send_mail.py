@@ -14,7 +14,6 @@ User = get_user_model()
 
 @job
 def send_activation_mail(user_id, token, uidb64):
-
     user = User.objects.get(pk=user_id)
     activation_url = f"{settings.FRONTEND_DOMAIN}/pages/auth/activate.html?uid={uidb64}&token={token}"
 

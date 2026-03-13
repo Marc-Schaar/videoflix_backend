@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-
-
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
+from django.db import transaction
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -45,7 +44,9 @@ class RegistrationView(APIView):
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
 
-            send_activation_mail.delay(user.id, token, uidb64)
+            transaction.on_commit(
+                lambda: send_activation_mail.delay(user.id, token, uidb64)
+            )
 
             data = {
                 "user": {
@@ -216,7 +217,9 @@ class PasswordResetRequestView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             token = default_token_generator.make_token(user)
 
-            send_password_reset_mail.delay(user.id, token, uidb64)
+            transaction.on_commit(
+                lambda: send_password_reset_mail.delay(user.id, token, uidb64)
+            )
 
         return Response(
             {

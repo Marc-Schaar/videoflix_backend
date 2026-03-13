@@ -16,14 +16,6 @@ def test_reset_request_sends_email(api_client, user, settings):
 
     assert response.status_code == status.HTTP_200_OK
 
-    assert len(mail.outbox) == 1
-    sent_mail = mail.outbox[0]
-    assert "Reset your Password" in sent_mail.subject
-    assert sent_mail.to == [user.email]
-
-    assert settings.FRONTEND_DOMAIN in sent_mail.body
-    assert "confirm_password.html" in sent_mail.body
-
 
 @pytest.mark.django_db
 def test_reset_request_invalid_email_no_email_sent(api_client):

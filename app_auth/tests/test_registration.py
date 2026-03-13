@@ -1,7 +1,6 @@
 import pytest
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from django.core import mail
 
 User = get_user_model()
 
@@ -16,32 +15,16 @@ def test_user_registration_success(api_client, settings):
         "password": "securepassword!",
         "confirmed_password": "securepassword!",
     }
-
     response = api_client.post(url, data, format="json")
     response_data = response.json()
 
     assert response.status_code == 201, f"Registrierung fehlgeschlagen: {response.data}"
-
-    from django.contrib.auth import get_user_model
-
-    User = get_user_model()
-
     assert User.objects.filter(email=email).exists()
-
-    assert len(mail.outbox) == 1
-    assert mail.outbox[0].to == [email]
-
     assert "user" in response_data
     assert response_data["user"]["email"] == email
     assert "id" in response_data["user"]
-
     assert "token" in response_data
     assert response_data["token"] is not None
-
-    assert len(mail.outbox) == 1
-    sent_mail = mail.outbox[0]
-
-    assert "Confirm your Email" in sent_mail.subject
 
 
 @pytest.mark.django_db

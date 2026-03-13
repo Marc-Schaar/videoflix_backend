@@ -13,6 +13,7 @@ ffmpeg, update model fields and perform filesystem cleanup.  They are kept
 thin so that the business logic in tasks and signal handlers remains clean.
 """
 
+
 def get_video_paths(instance, resolution_key=None):
     """Return filesystem paths for a video and its derived artifact.
     When ``resolution_key`` is omitted the function returns ``(source_path,

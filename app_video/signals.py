@@ -55,5 +55,4 @@ def on_video_delete(sender, instance, **kwargs):
     if instance.thumbnail_url:
         paths.append(instance.thumbnail_url.path)
 
-
     delete_video_files_task.delay(paths, instance.id)

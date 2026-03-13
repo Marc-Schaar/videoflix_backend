@@ -73,15 +73,13 @@ class Video(models.Model):
 
         return video_field.path
 
-
-    
     def get_hls_path(self, resolution, segment=None):
         """
         Return the absolute path to either a resolution-specific playlist or a segment.
 
-        The method uses the resolution field to locate the corresponding directory 
-        (e.g., videos/{id}/{resolution}/). If a ``segment`` name is provided, 
-        it returns the path to that specific file within that directory. 
+        The method uses the resolution field to locate the corresponding directory
+        (e.g., videos/{id}/{resolution}/). If a ``segment`` name is provided,
+        it returns the path to that specific file within that directory.
         Otherwise, it returns the path to the HLS playlist (.m3u8).
 
         Raises:
