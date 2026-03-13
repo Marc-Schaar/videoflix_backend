@@ -22,8 +22,11 @@ The easiest way to run the project. Docker handles Python, PostgreSQL, Redis, an
 * **Windows/macOS:** Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 * **Linux:** [Install Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/).
 
-### 2. Manual Installation (Alternative)
-If you want to run the project without Docker, install these dependencies:
+### 2. Manual Installation (Development Only)
+If you wish to run the project outside of Docker, you must install:
+- **Python 3.12+**
+- **FFMPEG:** 
+- **Redis:** 
 
 #### **Python 3.10+**
 Download from [python.org](https://www.python.org/downloads/) or use your package manager:
@@ -36,7 +39,6 @@ Required for video transcoding and resolution processing.
 sudo apt update && sudo apt install ffmpeg
 
 # Arch Linux
-```bash
 sudo pacman -S ffmpeg
 
 # macOS (Homebrew)
@@ -68,34 +70,9 @@ git clone https://github.com/Marc-Schaar/videoflix_backend.git
 cd videoflix_backend
 ```
 
-### 2. Create and activate a virtual environment:
+### 2. Create a `.env` file:
 
-```bash
-python3 -m venv env
-
-# macOS/Linux
-source env/bin/activate  
-
-# Windows
-.\env\Scripts\activate 
-```
-
-### 3. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Apply migrations:
-
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### 5. Create a `.env` file:
-
-The project requires a `.env` file in the root directory. You can create one by copying the provided template:
+The project uses a .env file for all sensitive settings and automated setup. You can create one by copying the provided template:
 
 **macOS / Linux / Git Bash:**
 ```bash
@@ -113,22 +90,52 @@ cp env.sample .env
 ```
 
 
-### 4. Deployment with Docker (Recommended)
+### 3. Deployment with Docker (Recommended)
 The easiest way to get the project running is using Docker Compose. This starts the Django app, the PostgreSQL database, and the Redis worker.
 
 ```bash
 docker-compose up --build
 ```
 
-### (Optional) Run the development server:
+**During the first start, the system will**:
+1. Wait for PostgreSQL to be ready.
+2. Apply all database migrations.
+3. Automatically create a Superuser using the credentials from your .env file.
+4. Start the Gunicorn server and the RQ-Worker.
+ 
+### Manual Setup (Alternative)
+If you prefer to run it locally without Docker:
 
+1. **Setup Virtual Environment**:
 ```bash
+python3 -m venv env
+source env/bin/activate  # Windows: .\env\Scripts\activate
+pip install -r requirements.txt
+```
+2. **Run Migrations & Server**:
+```bash
+python manage.py migrate
 python manage.py runserver
+```
+3. **Start the Worker (separate terminal)**:
+```bash
+python manage.py rqworker default
 ```
 
 
 ## Usage
-API base URL: http://127.0.0.1:8000/api/
+
+### Video Management (Admin Panel)
+Content management is handled via the Django Admin interface.
+1. Log in to the Admin Panel: http://127.0.0.1:8000/admin/
+2. Use the Superuser credentials defined in your .env.
+3. Upload Videos: Navigate to the Videos section to upload new files.
+
+**Note**: Upon saving, the background worker will automatically trigger ffmpeg to process the video into multiple resolutions.
+
+### API Access
+**API Base URL**: http://127.0.0.1:8000/api/
+**API Admin Panel**: http://127.0.0.1:8000/admin/
 
 ## Authentication
 Token-based authentication is used.
@@ -139,10 +146,10 @@ Authorization: Token <your_token>
 ```
 
 ## Architecture & Workflow
-- API (Django): Handles requests and manages the database.
-- Worker (Redis/ffmpeg): When a video is uploaded, a background task is sent to the worker.
-- Transcoding: The worker uses ffmpeg inside the container to generate multiple stream qualities.
-- Storage: Media files are stored in persistent Docker volumes.
+- **API (Django)**: Powered by Gunicorn, handles REST requests and metadata.
+. **Content Upload**: Videos are uploaded via the Admin Panel and stored in the media/ volume.
+- **Worker (Redis/ffmpeg)**: When a video is uploaded, a background task is sent to the worker.
+- **Transcoding**: The worker uses ffmpeg inside the container to generate multiple stream qualities.
 
 ## About the Project
 Videoflix is the final "Capstone" project of the Developer Academy Backend course. It demonstrates the ability to architect a complex system involving media processing, asynchronous task execution, and modern DevOps practices like containerization.
