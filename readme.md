@@ -134,8 +134,8 @@ Content management is handled via the Django Admin interface.
 **Note**: Upon saving, the background worker will automatically trigger ffmpeg to process the video into multiple resolutions.
 
 ### API Access
-**API Base URL**: http://127.0.0.1:8000/api/
-**API Admin Panel**: http://127.0.0.1:8000/admin/
+#### **API Base URL**: http://127.0.0.1:8000/api/
+#### **API Admin Panel**: http://127.0.0.1:8000/admin/
 
 ## Authentication
 Token-based authentication is used.
