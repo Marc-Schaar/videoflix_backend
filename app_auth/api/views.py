@@ -27,9 +27,22 @@ from .utils import (
 )
 from .messages import AuthMessages
 
+"""API views for authentication and user management.
+
+This module contains views for user registration, login, logout, token refresh,
+and password reset. All views use JWT tokens stored in HTTP-only cookies for
+security.
+"""
+
 User = get_user_model()
 
 class RegistrationView(APIView):
+    """API view for user registration.
+
+    Accepts POST requests with email and password. Creates an inactive user
+    account and sends an activation email.
+    """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -50,6 +63,12 @@ class RegistrationView(APIView):
 
 
 class ActivateView(APIView):
+    """API view for account activation.
+
+    Accepts GET requests with uidb64 and token parameters. Activates the user
+    account if the token is valid.
+    """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -71,6 +90,12 @@ class ActivateView(APIView):
 
 
 class LoginView(TokenObtainPairView):
+    """API view for user login.
+
+    Extends TokenObtainPairView to use custom serializer and set JWT cookies
+    on successful authentication.
+    """
+
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
@@ -93,6 +118,11 @@ class LoginView(TokenObtainPairView):
 
 
 class LogOutView(APIView):
+    """API view for user logout.
+
+    Blacklists the refresh token and clears authentication cookies.
+    """
+
     permission_classes = [HasRefreshTokenCookie]
     authentication_classes = []
 
@@ -108,6 +138,12 @@ class LogOutView(APIView):
 
 
 class TokenRefreshView(TokenRefreshView):
+    """API view for refreshing access tokens.
+
+    Extends TokenRefreshView to read refresh token from cookies and set new
+    tokens in response cookies.
+    """
+
     permission_classes = [HasRefreshTokenCookie]
 
     def post(self, request, *args, **kwargs):
@@ -131,6 +167,11 @@ class TokenRefreshView(TokenRefreshView):
 
 
 class PasswordResetRequestView(APIView):
+    """API view for requesting password reset.
+
+    Accepts POST with email. Sends password reset email if user exists.
+    """
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
@@ -151,6 +192,11 @@ class PasswordResetRequestView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
+    """API view for confirming password reset.
+
+    Accepts POST with new password and token. Updates password if valid.
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request, uidb64, token):

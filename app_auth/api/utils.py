@@ -11,8 +11,100 @@ from rest_framework.response import Response
 
 from app_auth.models import User
 
+"""Utility functions for authentication views and serializers.
+
+This module provides helpers for generating usernames, handling JWT cookies,
+token generation, and user retrieval from encoded IDs.
+"""
+
 
 def create_username(email):
+    """Generate a unique username from an email address.
+
+    Takes the part before '@' and appends a short UUID suffix to ensure
+    uniqueness.
+    """
+    base_username = email.split("@")[0]
+    base_username = base_username[:130]
+    unique_suffix = str(uuid.uuid4())[:8]
+    return f"{base_username}_{unique_suffix}"
+
+
+def get_auth_response_data(user, token):
+    """Structure response data for registration and login uniformly."""
+    return {
+        "user": {
+            "id": user.id,
+            "email": user.email,
+        },
+        "token": token,
+    }
+
+
+def generate_auth_tokens(user):
+    """Generate uidb64 and token for activation or password reset."""
+    uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    return uidb64, token
+
+
+def set_auth_cookies(response, access_token, refresh_token=None):
+    """Helper to set JWT cookies on the response."""
+    cookie_settings = {
+        "httponly": settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
+        "secure": settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
+        "samesite": settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
+    }
+
+    response.set_cookie(
+        key=settings.SIMPLE_JWT["AUTH_COOKIE"],
+        value=access_token,
+        **cookie_settings,
+    )
+
+    if refresh_token:
+        response.set_cookie(key="refresh_token", value=refresh_token, **cookie_settings)
+
+    return response
+
+
+def delete_auth_cookies(response):
+    """Delete all authentication-related cookies."""
+    response.delete_cookie(settings.SIMPLE_JWT.get("AUTH_COOKIE", "access_token"))
+    response.delete_cookie("refresh_token")
+    return response
+
+
+def blacklist_refresh_token(request):
+    """Attempt to blacklist the refresh token from cookies."""
+    refresh_token = request.COOKIES.get("refresh_token")
+    if refresh_token:
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return True
+        except Exception:
+            pass 
+    return False
+
+
+def get_error_response():
+    """Return a 401 response and delete cookies."""
+    response = Response(
+        {"error": "Invalid refresh token"}, status=status.HTTP_401_UNAUTHORIZED
+    )
+    response.delete_cookie(settings.SIMPLE_JWT["AUTH_COOKIE"])
+    response.delete_cookie("refresh_token")
+    return response
+
+
+def get_user_from_uidb64(uidb64):
+    """Retrieve a user from a base64-encoded user ID."""
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        return User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        return None
     base_username = email.split("@")[0]
     base_username = base_username[:130]
     unique_suffix = str(uuid.uuid4())[:8]
